@@ -47,7 +47,6 @@ for i = 1:NumBits
 end
 
 % ----------------------------------------------------
-
 SamplesPerBit = round(UI/dt);
 
 % -- 生成理想的发送时钟 (Tx Clock) (保持不变) --
@@ -58,6 +57,38 @@ Jitter_Phase = (Jitter_Amp/2) * sin(2*pi*Jitter_Freq*t);
 Data_Ideal = rectpulse(Tx_Bits, SamplesPerBit);
 Data_Ideal = Data_Ideal(1:NumSteps);
 Tx_Data = interp1(t, double(Data_Ideal), t - Jitter_Phase, 'linear', 0.5);
+
+%% 4. 绘制 Tx_Data 波形 (局部放大，观察抖动)
+% --- 设置绘图参数 ---
+Num_Bits_to_Show = 2000; % 绘制 2000 个比特周期，便于观察
+Start_Bit_Index = 2000; % 从第 2000 个比特开始绘制，避开初始化和锁定过程
+SamplesPerBit = round(UI/dt);
+
+% 计算起始和结束的数组索引
+Start_Index = Start_Bit_Index * SamplesPerBit;
+End_Index = Start_Index + (Num_Bits_to_Show * SamplesPerBit);
+
+% 确保索引不超出数组范围
+if End_Index > length(t)
+    End_Index = length(t);
+end
+
+% 提取绘图数据
+% 注意：这里的 t 应该与 Tx_Data 的长度完全匹配
+t_plot = t(Start_Index:End_Index);
+data_plot = Tx_Data(Start_Index:End_Index);
+
+% 绘制波形图
+figure; % 创建一个新的绘图窗口
+plot(t_plot * 1e12, data_plot, 'b', 'LineWidth', 1.5); % 将时间轴转换为皮秒 (ps)
+
+title('Tx\_Data (Din) 波形 - 10Gbps NRZ 带 0.2 UI 正弦抖动 (局部放大)');
+xlabel('时间 (ps)');
+ylabel('幅度 (V)');
+grid on;
+ylim([-0.1 1.1]); % 设置Y轴范围，让0和1电平更清晰
+
+
 %% 3. CDR 环路仿真 (接收端 Rx)
 % 初始化
 Vc = 0;                     % 电容积分电压
